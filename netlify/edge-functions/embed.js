@@ -14,33 +14,18 @@ export default async (request, context) => {
         return context.next();
     }
 
-    // 画像の拡張子を検出するため、実際にファイルが存在するか確認
-    const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    let imageUrl = null;
-    let contentType = 'image/jpeg';
-
-    const baseUrl = url.origin;
+    // 画像の拡張子リスト
+    const extensions = ['webp', 'jpg', 'jpeg', 'png', 'gif'];
 
     for (const ext of extensions) {
-        const testUrl = `${baseUrl}/images/${imageId}.${ext}`;
-        try {
-            const res = await fetch(testUrl, { method: 'HEAD' });
-            if (res.ok) {
-                imageUrl = testUrl;
-                contentType = res.headers.get('content-type') || `image/${ext}`;
-                break;
-            }
-        } catch (e) {
-            // 継続
+        // context.next() で静的ファイルを取得してみる
+        const imageResponse = await context.next(new Request(`${url.origin}/images/${imageId}.${ext}`));
+        if (imageResponse.ok) {
+            return imageResponse;
         }
     }
 
-    if (!imageUrl) {
-        return new Response('Image not found', { status: 404 });
-    }
-
-    // 画像に直接リダイレクト
-    return Response.redirect(imageUrl, 302);
+    return new Response('Image not found', { status: 404 });
 };
 
 export const config = {
